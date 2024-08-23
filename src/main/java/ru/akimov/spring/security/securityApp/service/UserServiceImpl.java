@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.akimov.spring.security.securityApp.dao.UserDao;
 import ru.akimov.spring.security.securityApp.exeption.UserAlreadyExistsException;
+import ru.akimov.spring.security.securityApp.exeption.UserNotFoundException;
 import ru.akimov.spring.security.securityApp.model.Role;
 import ru.akimov.spring.security.securityApp.model.User;
 
@@ -59,28 +60,37 @@ public class UserServiceImpl implements UserService {
         return userDao.getUserById(id);
     }
 
-
-    @Override
-    public void updateUser(User user, String[] roles) {
-        User existingUser = userDao.getUserById(user.getId());
-        Set<Role> role = new HashSet<>();
-        role.add(roleService.getAllRoles().get(1));
-        for (String s : roles) {
-            if (s.equals("ROLE_ADMIN")) {
-                role.add(roleService.getAllRoles().get(0));
-            }
-        }
-        user.setRoles(role);
-        if (!user.getPassword().equals(existingUser.getPassword()) && user.getPassword() != null) {
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
-        } else {
-            user.setPassword(existingUser.getPassword());
-        }
-
-        userDao.updateUser(user);
-
+@Override
+public void updateUser(User user, String[] roles) {
+    User existingUser = userDao.getUserById(user.getId());
+    if (existingUser == null) {
+        throw new UserNotFoundException("User not found with id: " + user.getId());
     }
 
+    // Получение ролей
+    Set<Role> newRoles = getRolesFromStrings(roles);
+    user.setRoles(newRoles);
+
+    // Обновление пароля
+    if (!user.getPassword().equals(existingUser.getPassword()) && !user.getPassword().isEmpty()) {
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+    } else {
+        user.setPassword(existingUser.getPassword());
+    }
+
+    userDao.updateUser(user);
+}
+    private Set<Role> getRolesFromStrings(String[] roles) {
+        Set<Role> roleSet = new HashSet<>();
+        roleSet.add(roleService.getAllRoles().get(1));
+
+        for (String role : roles) {
+            if (role.equals("ROLE_ADMIN")) {
+                roleSet.add(roleService.getAllRoles().get(0));
+            }
+        }
+        return roleSet;
+    }
 
     @Override
     public void deleteUserById(int id) {

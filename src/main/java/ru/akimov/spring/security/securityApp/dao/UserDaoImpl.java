@@ -3,7 +3,7 @@ package ru.akimov.spring.security.securityApp.dao;
 
 import org.springframework.stereotype.Repository;
 import ru.akimov.spring.security.securityApp.model.User;
-import ru.akimov.spring.security.securityApp.reposiroty.UserRepository;
+//import ru.akimov.spring.security.securityApp.reposiroty.UserRepository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityNotFoundException;
@@ -13,13 +13,13 @@ import java.util.List;
 @Repository
 public class UserDaoImpl implements UserDao {
 
-    private final UserRepository userRepository;
+//    private final UserRepository userRepository;
     @PersistenceContext
     private EntityManager entityManager;
 
-    public UserDaoImpl(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
+//    public UserDaoImpl(UserRepository userRepository) {
+//        this.userRepository = userRepository;
+//    }
 
     @Override
     public List<User> getAllUsers() {
@@ -28,6 +28,7 @@ public class UserDaoImpl implements UserDao {
 
     @Override
     public void saveUser(User user) {
+
         entityManager.persist(user);
     }
 
@@ -58,8 +59,12 @@ public class UserDaoImpl implements UserDao {
                 .getResultList();
     }
 
-    public User getUserByEmail(String email) {
-        return userRepository.findUserByEmail(email);
+    @Override
+    public User findUserByEmail(String email) {
+        List<User> users = entityManager.createQuery("SELECT u FROM User u WHERE u.email = :email", User.class)
+                .setParameter("email", email)
+                .getResultList();
+        return users.isEmpty() ? null : users.get(0);
     }
 }
 

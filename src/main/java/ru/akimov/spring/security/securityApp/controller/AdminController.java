@@ -57,35 +57,25 @@ public class AdminController {
     }
 
 @PutMapping("/edit/{id}")
-public String updateUser(@PathVariable("id") int id,
-                         @Validated(OnUpdate.class) @ModelAttribute("user") User user,
-                         BindingResult bindingResult,
-                         @RequestParam(value = "select_role", required = false) String[] roles,
-                         RedirectAttributes redirectAttributes) {
-
+public String updateUser(
+        @PathVariable("id") int id,
+        @Validated(OnUpdate.class) @ModelAttribute("user") User user,
+        BindingResult bindingResult,
+        @RequestParam(value = "select_role", required = false) String[] roles,
+        RedirectAttributes redirectAttributes) {
 
     if (bindingResult.hasErrors()) {
         redirectAttributes.addFlashAttribute("error", "Пожалуйста, исправьте ошибки.");
         return "redirect:/admin/users/edit/" + id;
     }
 
+    user.setId(id);
 
-    User existingUser = userService.getUserById(id);
-    existingUser.setEmail(user.getEmail());
-    existingUser.setName(user.getName());
-    existingUser.setCompany(user.getCompany());
+    userService.updateUser(user, roles);
 
-    if (roles == null || roles.length == 0) {
-        redirectAttributes.addFlashAttribute("error", "Пожалуйста, выберите хотя бы одну роль.");
-        return "redirect:/admin/users/edit/" + id;
-    }
-
-
-    userService.updateUser(existingUser, roles);
     redirectAttributes.addFlashAttribute("success", "Пользователь успешно обновлен!");
     return "redirect:/admin";
 }
-
     @DeleteMapping(value = "/deleteUser/{id}")
     public String deleteUserById(@PathVariable("id") int id) {
         userService.deleteUserById(id);
